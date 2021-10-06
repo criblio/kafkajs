@@ -1,5 +1,6 @@
 const Connection = require('../network/connection')
 const { KafkaJSConnectionError, KafkaJSNonRetriableError } = require('../errors')
+const { isIPv6 } = require('net')
 
 /**
  * @typedef {Object} ConnectionBuilder
@@ -76,9 +77,15 @@ module.exports = ({
         const list = await getBrokers()
 
         const randomBroker = list[index++ % list.length]
+        const ipv6Match = randomBroker.match(/^\[(.*)\](:(\d+))?$/)
 
-        host = randomBroker.split(':')[0]
-        port = Number(randomBroker.split(':')[1])
+        if (ipv6Match && isIPv6(ipv6Match[1])) {
+          host = ipv6Match[1]
+          port = Number(ipv6Match[3])
+        } else {
+          host = randomBroker.split(':')[0]
+          port = Number(randomBroker.split(':')[1])
+        }
       }
 
       return new Connection({

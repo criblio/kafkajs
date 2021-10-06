@@ -6,7 +6,9 @@ const { KafkaJSConnectionError, KafkaJSNonRetriableError } = require('../../erro
 describe('Cluster > ConnectionBuilder', () => {
   let builder
 
-  const brokers = ['host.test:7777', 'host2.test:7778', 'host3.test:7779']
+  const brokers = ['host.test:7777', 'host2.test:7778', 'host3.test:7779', '[1111::]:7780']
+  const hosts = ['host.test', 'host2.test', 'host3.test', '1111::']
+  const ports = [7777, 7778, 7779, 7780]
   const ssl = { ssl: true }
   const sasl = { sasl: true }
   const clientId = 'test-client-id'
@@ -29,8 +31,8 @@ describe('Cluster > ConnectionBuilder', () => {
   test('creates a new connection using a random broker', async () => {
     const connection = await builder.build()
     expect(connection).toBeInstanceOf(Connection)
-    expect(connection.host).toBeOneOf(['host.test', 'host2.test', 'host3.test'])
-    expect(connection.port).toBeOneOf([7777, 7778, 7779])
+    expect(connection.host).toBeOneOf(hosts)
+    expect(connection.port).toBeOneOf(ports)
     expect(connection.ssl).toEqual(ssl)
     expect(connection.sasl).toEqual(sasl)
     expect(connection.clientId).toEqual(clientId)
@@ -40,13 +42,16 @@ describe('Cluster > ConnectionBuilder', () => {
   })
 
   test('when called without host and port iterates throught the seed brokers', async () => {
-    const connections = []
+    const connectionHosts = []
+    const connectionPorts = []
     for (let i = 0; i < brokers.length; i++) {
       const { host, port } = await builder.build()
-      connections.push(`${host}:${port}`)
+      connectionHosts.push(host)
+      connectionPorts.push(port)
     }
 
-    expect(connections).toIncludeSameMembers(brokers)
+    expect(connectionHosts).toIncludeSameMembers(hosts)
+    expect(connectionPorts).toIncludeSameMembers(ports)
   })
 
   test('accepts overrides for host, port and rack', async () => {
